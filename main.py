@@ -9,6 +9,8 @@ class TreeNode:
         self.word = word
         self.children = []
         self.depth = depth
+        self.definition = None
+        self.examples = []
 
     def add_child(self, child_node):
         self.children.append(child_node)
@@ -24,7 +26,7 @@ class Tree:
         synonyms = set()
         for syn in wn.synsets(word):
             for lemma in syn.lemmas():
-                synonyms.add(lemma.name())
+                synonyms.add((lemma.name(), syn.definition(), tuple(syn.examples())))
         self.memo[word] = synonyms
         return synonyms
 
@@ -35,15 +37,21 @@ class Tree:
             return
         visited.add(node.word)
         synonyms = self.get_synonyms(node.word)
-        for synonym in synonyms:
+        for synonym, definition, examples in synonyms:
             if synonym not in visited:
                 child_node = TreeNode(synonym, depth + 1)
+                child_node.definition = definition
+                child_node.examples = examples
                 node.add_child(child_node)
                 self.build_tree(child_node, depth + 1, max_depth, visited)
 
     def print_tree(self, node, prefix='', is_last=True):
         connector = '└── ' if is_last else '├── '
         print(f"{prefix}{connector}{node.word} (Depth: {node.depth})")
+        if node.definition:
+            print(f"{prefix}{'    ' if is_last else '│   '}{'- Definition: ' + node.definition}")
+        if node.examples:
+            print(f"{prefix}{'    ' if is_last else '│   '}{'- Examples: ' + '; '.join(node.examples)}")
         prefix += '    ' if is_last else '│   '
         for i, child in enumerate(node.children):
             self.print_tree(child, prefix, i == len(node.children) - 1)
